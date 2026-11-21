@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Neon Bastion - Strategy Tower Defense</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <div id="hud">
+    <h1>NEON BASTION</h1><span class="sp"></span>
+    <div class="stat">💰 <b id="gold">0</b></div>
+    <div class="stat l">❤ <b id="lives">0</b></div>
+    <div class="stat w">🌊 Wave <b id="wave">0/0</b></div>
+    <div class="stat">☠ <b id="kills" style="color:#fff">0</b></div>
+    <button id="bSend" title="Space">▶ Send wave <span id="cdn"></span></button>
+    <button id="bPause" title="P">⏸</button>
+    <button class="spd on" data-s="1">1x</button><button class="spd" data-s="2">2x</button><button class="spd" data-s="3">3x</button>
+    <button id="bMenu">☰ Menu</button>
+  </div>
+  <div id="main">
+    <div id="stage"><canvas id="cv"></canvas><div id="toast"></div></div>
+    <div id="side">
+      <div class="box"><h3>BUILD (keys 1-7)</h3><div id="towers"></div><div id="tip">Hover a tower to see what it does.</div></div>
+      <div class="box"><h3>SELECTED TOWER</h3>
+        <div id="selname">None</div><div id="selstats">Click a tower on the map to upgrade, sell or change its targeting.</div>
+        <div class="row"><button id="bUp">Upgrade (U)</button><button id="bTgt">Target (T)</button><button id="bSell">Sell (S)</button></div>
+      </div>
+      <div class="box"><h3>COMMANDER ABILITIES</h3>
+        <div class="ab">
+          <button id="aAir" title="Q">🚀 Airstrike (Q)<div class="cd"></div></button>
+          <button id="aFrz" title="W">❄ Freeze (W)<div class="cd"></div></button>
+          <button id="aOvr" title="E">⚡ Overcharge (E)<div class="cd"></div></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="menu" class="overlay">
+  <div class="card">
+    <h2>NEON BASTION</h2>
+    <p class="sub">Defend the core. Choose your towers wisely, combine elements, and survive every wave.</p>
+    <div id="levels"></div>
+    <div class="help">
+      <b>How to play:</b> Pick a tower (or press 1-7) and click an empty tile to build. Enemies follow the glowing path - if they reach your core you lose lives.<br>
+      <b>Combos:</b> Cryo-slowed enemies take +25% damage from Cannon &amp; Railgun (shatter). Burning enemies can't be healed. Tesla ignores armor. Beacons boost every tower around them.<br>
+      <b>Flyers</b> ignore the path - Cannon and Inferno cannot hit them. <b>Send waves early</b> (Space) for bonus gold. Use abilities (Q / W / E) in emergencies. Right-click or Esc cancels placement.
+    </div>
+  </div>
+</div>
+<div id="end" class="overlay hide">
+  <div class="card" style="max-width:480px">
+    <h2 id="endT"></h2><p class="sub" id="endS"></p>
+    <div class="row"><button id="eNext">Next level ▶</button><button id="eRetry">Retry ↻</button><button id="eMenu">Levels ☰</button></div>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
