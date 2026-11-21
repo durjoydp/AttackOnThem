@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#070b16">
+<meta name="mobile-web-app-capable" content="yes">
 <title>Neon Bastion - Strategy Tower Defense</title>
 <style>
 :root{--bg:#070b16;--panel:#0e1526;--line:#1c2a48;--txt:#d8e6ff;--dim:#7b8db3;--acc:#4df0ff;--gold:#ffd166;--bad:#ff5a6e;--good:#6bffb8}
@@ -45,6 +47,36 @@ canvas{width:100%;display:block;border:1px solid var(--line);border-radius:10px;
 .lv .st{color:var(--gold);letter-spacing:2px;margin-top:4px}.lv.locked{opacity:.35;pointer-events:none}
 .help{font-size:12px;color:var(--dim);line-height:1.6;text-align:left;background:#0a1020;border-radius:8px;padding:10px;margin-top:6px}
 .help b{color:var(--txt)}
+
+/* ===== mobile / touch ===== */
+html{-webkit-text-size-adjust:100%}
+body{touch-action:manipulation;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;overscroll-behavior:none}
+canvas{touch-action:none}
+#rot{display:none;text-align:center;font-size:12px;color:var(--dim);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:5px;margin-bottom:8px}
+@media (pointer:coarse){button{min-height:44px}.tw .k{display:none}}
+@media (max-width:800px){
+  body{padding:6px}
+  #hud{gap:5px;padding:6px}
+  #hud h1{display:none}
+  .stat{font-size:13px;padding:4px 7px}
+  #hud button{padding:6px 8px;font-size:13px}
+  #side{flex:1 1 100%}
+  #towers{display:grid;grid-template-columns:repeat(2,1fr);gap:5px}
+  .tw{margin-bottom:0}
+  .box{padding:8px}
+  #tip{min-height:34px}
+  .card{padding:14px}
+  #levels{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  .lv small{min-height:0}
+}
+@media (max-width:800px) and (orientation:portrait){#rot{display:block}}
+@media (max-height:520px) and (orientation:landscape){
+  #main{flex-wrap:nowrap}
+  #stage{flex:1 1 auto;min-width:0}
+  canvas{max-height:calc(100vh - 70px);width:auto;max-width:100%;margin:0 auto}
+  #side{flex:0 0 210px;overflow-y:auto;max-height:calc(100vh - 70px)}
+  #tip,#rot{display:none}
+}
 </style>
 </head>
 <body>
@@ -60,6 +92,7 @@ canvas{width:100%;display:block;border:1px solid var(--line);border-radius:10px;
     <button class="spd on" data-s="1">1x</button><button class="spd" data-s="2">2x</button><button class="spd" data-s="3">3x</button>
     <button id="bMenu">☰ Menu</button>
   </div>
+  <div id="rot">📱 Tip: rotate your phone to landscape for a bigger map</div>
   <div id="main">
     <div id="stage"><canvas id="cv"></canvas><div id="toast"></div></div>
     <div id="side">
@@ -151,6 +184,7 @@ let save={unlocked:1,stars:[]};
 try{const s=JSON.parse(localStorage.getItem('neonBastion')||'null');if(s)save=s}catch(e){}
 function persist(){try{localStorage.setItem('neonBastion',JSON.stringify(save))}catch(e){}}
 
+const COARSE=matchMedia('(pointer:coarse)').matches;
 let G=null;
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('show'),1600)}
 
@@ -206,7 +240,7 @@ function buildUI(){
     if(!unlocked)b.classList.add('lock');
     b.innerHTML=`<span class="dot" style="background:${d.color};box-shadow:0 0 8px ${d.color}"></span><span class="nm">${d.name}</span><span class="ct">${unlocked?d.cost:'🔒'}</span><span class="k">${idx+1}</span>`;
     b.onmouseenter=()=>$('tip').textContent=unlocked?d.desc:'Unlocks in a later level.';
-    b.onclick=()=>chooseTower(k);
+    b.onclick=()=>{$('tip').textContent=unlocked?d.desc:'Unlocks in a later level.';chooseTower(k)};
     box.appendChild(b);
   });
   updateSel();
@@ -555,18 +589,21 @@ function drawEnemy(e){
 
 /* ============ input ============ */
 function mpos(ev){const r=cv.getBoundingClientRect();G.mx=(ev.clientX-r.left)*W/r.width;G.my=(ev.clientY-r.top)*H/r.height}
-cv.addEventListener('mousemove',e=>{if(G)mpos(e)});
+cv.addEventListener('pointermove',e=>{if(G)mpos(e)});
 cv.addEventListener('contextmenu',e=>{e.preventDefault();if(G){G.mode=null;G.sel=null;refreshBtns();updateSel()}});
 cv.addEventListener('click',e=>{
   if(!G||G.over)return;mpos(e);
   const c=Math.floor(G.mx/CELL),r=Math.floor(G.my/CELL);
-  if(G.mode&&G.mode.type==='strike'){strikeAt(G.mx,G.my);return}
+  if(G.mode&&G.mode.type==='strike'){
+    if(COARSE){const id='s'+c+','+r;if(G.pend!==id){G.pend=id;toast('Tap again to confirm airstrike');return}G.pend=null}
+    strikeAt(G.mx,G.my);return}
   if(c<0||r<0||c>=COLS||r>=ROWS)return;
   const cell=G.grid[r*COLS+c];
   if(G.mode&&G.mode.type==='place'){
     if(cell!==0){if(typeof cell==='object'){G.sel=cell;G.mode=null;refreshBtns();updateSel()}else toast(cell===1?"Can't build on the path":'Blocked by rock');return}
     const k=G.mode.key,cost=T[k].cost;
     if(G.gold<cost)return toast('Not enough gold');
+    if(COARSE){const id=k+':'+(r*COLS+c);if(G.pend!==id){G.pend=id;toast('Tap again to build');return}G.pend=null}
     G.gold-=cost;
     const t={key:k,c,r,x:c*CELL+20,y:r*CELL+20,lvl:1,cool:0,invest:cost,mode:0,ang:-Math.PI/2,bd:1,br:1};
     G.grid[r*COLS+c]=t;G.towers.push(t);burst(t.x,t.y,T[k].color,10);return;

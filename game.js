@@ -50,6 +50,7 @@ let save={unlocked:1,stars:[]};
 try{const s=JSON.parse(localStorage.getItem('neonBastion')||'null');if(s)save=s}catch(e){}
 function persist(){try{localStorage.setItem('neonBastion',JSON.stringify(save))}catch(e){}}
 
+const COARSE=matchMedia('(pointer:coarse)').matches;
 let G=null;
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('show'),1600)}
 
@@ -105,7 +106,7 @@ function buildUI(){
     if(!unlocked)b.classList.add('lock');
     b.innerHTML=`<span class="dot" style="background:${d.color};box-shadow:0 0 8px ${d.color}"></span><span class="nm">${d.name}</span><span class="ct">${unlocked?d.cost:'🔒'}</span><span class="k">${idx+1}</span>`;
     b.onmouseenter=()=>$('tip').textContent=unlocked?d.desc:'Unlocks in a later level.';
-    b.onclick=()=>chooseTower(k);
+    b.onclick=()=>{$('tip').textContent=unlocked?d.desc:'Unlocks in a later level.';chooseTower(k)};
     box.appendChild(b);
   });
   updateSel();
@@ -454,18 +455,21 @@ function drawEnemy(e){
 
 /* ============ input ============ */
 function mpos(ev){const r=cv.getBoundingClientRect();G.mx=(ev.clientX-r.left)*W/r.width;G.my=(ev.clientY-r.top)*H/r.height}
-cv.addEventListener('mousemove',e=>{if(G)mpos(e)});
+cv.addEventListener('pointermove',e=>{if(G)mpos(e)});
 cv.addEventListener('contextmenu',e=>{e.preventDefault();if(G){G.mode=null;G.sel=null;refreshBtns();updateSel()}});
 cv.addEventListener('click',e=>{
   if(!G||G.over)return;mpos(e);
   const c=Math.floor(G.mx/CELL),r=Math.floor(G.my/CELL);
-  if(G.mode&&G.mode.type==='strike'){strikeAt(G.mx,G.my);return}
+  if(G.mode&&G.mode.type==='strike'){
+    if(COARSE){const id='s'+c+','+r;if(G.pend!==id){G.pend=id;toast('Tap again to confirm airstrike');return}G.pend=null}
+    strikeAt(G.mx,G.my);return}
   if(c<0||r<0||c>=COLS||r>=ROWS)return;
   const cell=G.grid[r*COLS+c];
   if(G.mode&&G.mode.type==='place'){
     if(cell!==0){if(typeof cell==='object'){G.sel=cell;G.mode=null;refreshBtns();updateSel()}else toast(cell===1?"Can't build on the path":'Blocked by rock');return}
     const k=G.mode.key,cost=T[k].cost;
     if(G.gold<cost)return toast('Not enough gold');
+    if(COARSE){const id=k+':'+(r*COLS+c);if(G.pend!==id){G.pend=id;toast('Tap again to build');return}G.pend=null}
     G.gold-=cost;
     const t={key:k,c,r,x:c*CELL+20,y:r*CELL+20,lvl:1,cool:0,invest:cost,mode:0,ang:-Math.PI/2,bd:1,br:1};
     G.grid[r*COLS+c]=t;G.towers.push(t);burst(t.x,t.y,T[k].color,10);return;
